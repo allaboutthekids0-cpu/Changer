@@ -1,0 +1,50 @@
+-- Standalone Saint Hub UI Text Patcher (Tailored for IMG_0974.jpg Layout)
+local CoreGui = game:GetService("CoreGui")
+local Players = game:GetService("Players")
+local LP = Players.LocalPlayer
+
+local function patchText(obj)
+    if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+        local lowerText = obj.Text:lower()
+        
+        -- Matches 'BLESSED HUB discord.gg/blessedhub' or standalone title headers
+        if lowerText:find("blessed hub") then
+            -- Replaces the header while maintaining a clean look
+            obj.Text = "Saint Hub"
+        elseif lowerText == "blessed" then
+            -- Changes the giant golden center text intro seen in IMG_0974.jpg
+            obj.Text = "Saint"
+        elseif lowerText:find("discord.gg/") then
+            -- Optional: Cleans up the secondary discord text line if needed
+            obj.Text = "Saint Hub"
+        end
+    end
+end
+
+local function startPatcher(targetStorage)
+    if not targetStorage then return end
+    
+    -- Scan existing UI elements currently drawn on screen
+    for _, child in ipairs(targetStorage:GetDescendants()) do
+        patchText(child)
+    end
+    
+    -- Watch for the intro elements when they instantiate or reset
+    targetStorage.DescendantAdded:Connect(function(child)
+        task.wait() -- Allow text property initialization frame
+        patchText(child)
+        
+        if child:IsA("TextLabel") or child:IsA("TextButton") or child:IsA("TextBox") then
+            child:GetPropertyChangedSignal("Text"):Connect(function()
+                patchText(child)
+            end)
+        end
+    end)
+end
+
+-- Execute across both potential CoreGui and PlayerGui containers
+task.spawn(function()
+    startPatcher(CoreGui)
+    local pg = LP:WaitForChild("PlayerGui", 5)
+    if pg then startPatcher(pg) end
+end)
